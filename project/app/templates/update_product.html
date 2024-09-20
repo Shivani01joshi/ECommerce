@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Update Product</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Product Name -->
+                        <div class="form-group mb-3">
+                            <label for="id_name" class="form-label">Product Name</label>
+                            <input type="text" name="name" class="form-control" id="id_name" value="{{product.name}}" required>
+                        </div>
+                        
+                        <!-- Product Price -->
+                        <div class="form-group mb-3">
+                            <label for="id_price" class="form-label">Price</label>
+                            <input type="number" name="price" class="form-control" id="id_price" value="{{product.price}}"  required>
+                        </div>
+                        
+                        <!-- Product Category -->
+                        <div class="form-group mb-3">
+                            <label for="id_category" class="form-label">Category</label>
+                            <select name="category" class="form-control" id="id_category" required>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        
+                        <!-- Product Description -->
+                        <div class="form-group mb-3">
+                            <label for="id_description" class="form-label">Description</label>
+                            <input name="description" class="form-control" id="id_description" rows="3" value="{{product.description }}"></input>
+                        </div>
+                        
+                        <!-- Product Image -->
+                        <div class="form-group mb-3">
+                            <label for="id_image" class="form-label">Product Image</label>
+                            <input type="file" name="image" class="form-control-file" id="id_image">
+                            {% if product.image %}
+                                <p>Current Image URL: <a href="{{ product.image.url }}" target="_blank">{{ product.image.url }}</a></p>
+                            {% else %}
+                                <p>No image available.</p>
+                            {% endif %}
+                        </div>
+                        
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Update Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

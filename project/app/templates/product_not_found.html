@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Include Bootstrap CSS -->
+   
+    <style>
+        .full-height {
+            min-height: 60vh; /* Ensure the container takes at least full viewport height */
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+        }
+    </style>
+</head>
+<body>
+    <div class="full-height">
+        <div class="text-center">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}"><strong><h4>{{ message }}</h4></strong></div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    
+    <br>
+    <br>
+    
+</div>
+    <!-- Include Bootstrap JS and dependencies -->
+<div class="container text-center">
+    <a href="{% url "home"  %}" >If you want to look for other prouduct, click here</a>
+</div>
+</body>
+</html>
+{% endblock %}

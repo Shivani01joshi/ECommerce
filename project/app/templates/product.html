@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+   
+    <!-- product_list.html -->
+    <div class="container">
+        <div class="row">
+            {% for product in object %}
+                <div class="col-md-4 mb-4 mt-3">
+                    <div class="card">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                        {% else %}
+                            <img src="path/to/default-image.jpg" class="card-img-top" alt="No image available">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text">Price: ${{ product.price }}</p>
+                            <a href="{% url "product_detail" product.id %}" type="button" class="btn btn-info">View More</a>
+                            <button type="button" class="btn btn-warning">Add to Cart</button>
+                            <button type="button" class="btn btn-secondary">Buy now</button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock content %}

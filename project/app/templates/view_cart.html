@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Your Cart</h2>
+{% if cart_items %}
+<form method="POST" action="{% url 'cart' %}">
+    {% csrf_token %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>Rs.{{ item.product.price }}</td>
+                <td>
+                    <input type="number" name="quantity_{{ item.id }}" value="{{ item.quantity }}" min="0" class="form-control">
+                </td>
+                <td>Rs.{{ item.get_total_item_price }}</td>
+                <td>
+                    
+                    <a href="{% url 'remove_from_cart' item.id %}" class="btn btn-danger btn-sm">Remove</a>
+                    
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="text-center">
+        <button type="submit" class="btn btn-warning mt-3">Update Cart</button>
+        <a href="{% url "checkout" %}" class="btn btn-primary">Proceed to Checkout</a>
+    </div>
+</form>
+{% else %}
+<p>No items in your cart.</p>
+{% endif %}
+<br>
+<br>
+<p class="text-center"><strong>Total: Rs.{{ total_price }}</strong></p>
+
+{% endblock %}

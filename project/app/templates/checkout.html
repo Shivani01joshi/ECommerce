@@ -1,0 +1,19 @@
+<!-- templates/checkout.html -->
+{% extends "base.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+</head>
+<body>
+    <form action="" method="post">
+        {% csrf_token %}
+        {{order_form}}
+        <button type="submit">pay</button>
+    </form>
+</body>
+</html>
+{% endblock %}

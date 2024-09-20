@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="text-center">Orders</h2>
+    {% if orders %}
+        <div class="row">
+            {% for order in orders %}
+                <div class="col-md-6 mb-4"> <!-- Changed col-md-4 to col-md-6 -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">User: {{ order.user }}</h5>
+                            <p class="card-text">
+                                <strong>Order Date:</strong> {{ order.order_date|date:"D, d M Y H:i" }}<br>
+                                <strong>Total Price:</strong> ${{ order.get_total_order_price }}<br>
+                                <strong>Total Items:</strong>
+                                {% for item in order.items.all %}
+                                    {{ item.quantity }}
+                                {% endfor %}
+                                <br>
+                                <strong>Delivered:</strong> {{ order.order_delivered|yesno:"Yes,No" }}<br>
+                                <strong>Received:</strong> {{ order.order_received|yesno:"Yes,No" }}<br>
+                                {% if order.items.all %}
+                                    <strong>Items:</strong><br>
+                                    <div class="row">
+                                        {% for item in order.items.all %}
+                                            <div class="col-md-12">
+                                                <div class="card mb-3">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">{{ item.product.name }}</h5>
+                                                        <p class="card-text">
+                                                            <strong>Quantity:</strong> {{ item.quantity }}<br>
+                                                            <strong>Price per Item:</strong> ${{ item.product.price }}<br>
+                                                            <strong>Total Price:</strong> ${{ item.get_total_item_price }}<br>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p>No items in this order.</p>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>You have not placed any orders yet.</p>
+    {% endif %}
+{% endblock %}

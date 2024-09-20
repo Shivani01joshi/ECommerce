@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<form action="{% url "login" %}"method="POST">
+    {% csrf_token %}
+    {% if messages %}
+                <div>
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+    <div class="d-flex justify-content-center mt-4">
+    <div class="card shadow " style="width: 40rem;">
+       
+    <div class="card-body p-4">
+    <div class="mb-3">
+      <label for="exampleInputEmail1" class="form-label">Username</label>
+      <input type="text" name="username" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+     
+    </div>
+    <div class="mb-3">
+      <label for="exampleInputPassword1" class="form-label">Password</label>
+      <input type="password" name="password" class="form-control" id="exampleInputPassword1">
+    </div>
+    
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Login</button>
+        
+        <!-- Add margin-left to create space between the button and the link -->
+        <a href="{% url "forget_password" %}" class="btn btn-link ms-5">Forget Password</a>
+    </div>
+    
+  </form>
+</div>
+</div>
+</div>
+{% endblock content %}

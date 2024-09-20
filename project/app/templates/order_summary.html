@@ -1,0 +1,17 @@
+<!-- templates/order_summary.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Summary</title>
+</head>
+<body>
+    <h1>Order Summary</h1>
+    <p>Thank you for your purchase!</p>
+    <p>Your order number is: {{ order.id }}</p>
+    <p>Total amount: ${{ order.total_amount }}</p>
+    <a href="{% url 'home' %}">Return to Home</a>
+</body>
+</html>

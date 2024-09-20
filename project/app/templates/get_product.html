@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" class="img-fluid" alt="{{ product.name }}">
+                {% endif %}
+            </div>
+            <div class="col-md-6 mt-5">
+                <h2>{{ product.name }}</h2>
+                <p><strong>Price:</strong> ${{ product.price }}</p>
+                <p><strong>Category:</strong> {{ product.category.name }}</p>
+                <p><strong>Description:</strong> {{ product.description }}</p>
+                <h5>Average Rating: {{ product.average_rating }}/5</h5>
+                {% if user.is_authenticated %}
+                <form method="POST" action="{% url 'add_to_cart' product.id %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="quantity"><strong>Quantity:</strong></label>
+                        <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add to cart</button>
+                  
+                </form>
+
+                {% if user.is_superuser or user.is_staff %}
+                <a href="{% url 'update_product' product.id %}" class="btn btn-primary mt-2">Edit Product</a>
+                <a href="{% url 'delete_product' product.id %}" class="btn btn-danger mt-2">Delete Product</a>
+                {% endif %}
+                      
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-center"> 
+       
+        <div class="d-flex flex-column align-items-center"> 
+            <h2>Reviews</h2>
+            {% for review in reviews %}
+                <p><strong>{{ review.author.username }}:</strong> {{ review.review }}</p>
+                <p>Rating: {{ review.rating }}/5</p>
+            {% empty %}
+                <p>No reviews yet.</p>
+            {% endfor %}
+    
+            {% if user.is_authenticated %}
+                <h4>Submit a Review</h4>
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="text-center">
+                    <button type="submit" class="btn btn-success">Submit Review</button>
+                </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    
+
+{% endblock content %}

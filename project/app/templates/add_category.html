@@ -1,0 +1,29 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Add Category</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Product Name -->
+                        <div class="form-group mb-3">
+                            <label for="id_name" class="form-label">Category Name</label>
+                            <input type="text" name="name" class="form-control" id="id_name" placeholder="Enter Category name" required>
+                        </div>
+                        
+                             <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Add </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
