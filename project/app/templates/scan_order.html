@@ -1,0 +1,11 @@
+<!-- scan_order.html -->
+ {% extends "base.html" %}
+ {% block content %}
+<h2>Scan Shipment</h2>
+<form method="POST">
+    {% csrf_token %}
+    <label for="tracking_number">Scan Order (Tracking Number):</label>
+    <input type="text" name="tracking_number" id="tracking_number" required>
+    <button type="submit">Submit</button>
+</form>
+{% endblock content %}

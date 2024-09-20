@@ -36,6 +36,7 @@
                                                 </div>
                                             </div>
                                         {% endfor %}
+                                        <a href="{% url "shippment-status" order.id %}">Check for Shippment status</a>
                                     </div>
                                 {% else %}
                                     <p>No items in this order.</p>

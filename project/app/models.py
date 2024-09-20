@@ -78,5 +78,28 @@ class checkoutAddress(models.Model):
     def __str__(self):
         return self.user.username
 
+class Shipment(models.Model):
+    order = models.OneToOneField(Order, on_delete=models.CASCADE)
+    tracking_number = models.CharField(max_length=100, unique=True)  
+    shipped_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    shipment_status = models.CharField(max_length=20, default='Pending')  # Pending, Shipped, Delivered
+
+    def __str__(self):
+        return f"Shipment {self.tracking_number} for Order {self.order.order_id}"
+
+    def mark_as_shipped(self):
+        self.shipment_status = 'Shipped'
+        self.shipped_at = timezone.now()
+        self.order.order_delivered = False  # The order is in transit
+        self.order.save()
+        self.save()
+
+    def mark_as_delivered(self):
+        self.shipment_status = 'Delivered'
+        self.delivered_at = timezone.now()
+        self.order.order_delivered = True  # Order has been delivered
+        self.order.save()
+        self.save()
 
 

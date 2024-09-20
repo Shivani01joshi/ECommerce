@@ -35,8 +35,9 @@ urlpatterns = [
     path('payment-confirm/<str:payment_intent_id>/', views.payment_confirm, name='payment_confirm'),
     path('confirm-payment/', views.confirm_payment, name='confirm_payment'),
     path('cancel-payment/', views.cancel_payment, name='cancel'),
-    path('product/<int:product_id>/', views.product_detail, name='product_detail'),
-   # path('address/',views.addresss,name='address'),
+    path('product/<int:id>/', views.product_detail, name='product_detail'),
+   path('scan_order/',views.scan_order,name='scan_order'),
+   path('shippment-status/<int:id>/',views.shippment_status,name='shippment-status'),
    
     
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

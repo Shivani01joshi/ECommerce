@@ -1,16 +1,17 @@
 from datetime import datetime
+import string
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import random
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.conf import settings
-from .models import Category, Order, OrderItem, Product, checkoutAddress
+from .models import Category, Order, OrderItem, Product, Shipment, checkoutAddress
 from .forms import CategoryForm, CheckoutForm, CustomUserCreationForm, ForgetPasswordForm,  ProductForm, RatingForm, ResetPasswordForm, SearchForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate, login, logout
@@ -416,6 +417,21 @@ def confirm_payment(request):
                 #print(order.items)
                 order.save()
                 order_items.delete()
+                tracking_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+                # Create or update shipment details
+                shipment, _ = Shipment.objects.get_or_create(
+                    order=order,
+                    defaults={
+                        'tracking_number': tracking_number,
+                        'shipped_at': timezone.now(),
+                        'shipment_status': 'Pending'
+                    }
+                )
+                shipment.shipped_at = timezone.now()  # Update shipped_at
+                shipment.delivered_at = timezone.now() if shipment.shipment_status == 'Shipped' else shipment.delivered_at
+                shipment.save()
+                print(shipment)
                 total_price = request.session.get('total_price')
                 subject = "Payment status"
                 html_message = render_to_string('order_confirmation_email.html', {
@@ -446,12 +462,19 @@ def confirm_payment(request):
 @login_required(login_url='login')
 def user_orders(request):
     orders = Order.objects.all()
-    #print('user')
-    #print(orders)
     context = {
         'orders': orders
     }
     return render(request, 'user_orders.html', context)
+
+def shippment_status(request,id):
+    order = get_object_or_404(Order, id=id)
+    shipment = getattr(order, 'shipment', None)
+    context = {
+        'order': order,
+        'shipment': shipment,
+    }
+    return render(request, 'shipment_details.html', context)
 
 @login_required(login_url='login')
 def particular_orders(request):
@@ -461,12 +484,13 @@ def particular_orders(request):
         'orders': orders
     }
     return render(request, 'user_orders.html', context)
+
 def cancel_payment(request):
     return render(request,'cancel_payment.html')
 
-def product_detail(request, product_id):
+def product_detail(request, id):
     #print('hi')
-    product = get_object_or_404(Product, id=product_id)
+    product = get_object_or_404(Product, id=id)
     #print(product_id)
     reviews = product.reviews.all()  # Related name 'reviews' from the Rating model
 
@@ -488,7 +512,36 @@ def product_detail(request, product_id):
     }
     return render(request, 'get_product.html', context)
 
+def scan_order(request):
+    if request.method == 'POST':
+        scanned_code = request.POST.get('tracking_number')
 
+        try:
+            shipment = get_object_or_404(Shipment, tracking_number=scanned_code)
+            
+            # Update shipment status based on input from the scanner
+            if shipment.shipment_status == 'Pending':
+                shipment.mark_as_shipped()
+                shipment.shipped_at = timezone.now()  # Update shipped_at when marked as shipped
+                shipment.save()  # Save the shipment
+                messages.success(request, f"Order {shipment.order.order_id} marked as shipped.")
+                return redirect('home')
+
+            elif shipment.shipment_status == 'Shipped':
+                shipment.delivered_at = timezone.now()  # Directly set delivered_at
+                shipment.mark_as_delivered()  # Call to change status
+                shipment.save()  # Save the shipment
+                messages.success(request, f"Order {shipment.order.order_id} marked as delivered.")
+                return redirect('home')
+
+            else:
+                messages.success(request, "Order has already been delivered.")
+                return redirect('home')
+                
+        except Shipment.DoesNotExist:
+            return HttpResponse("Invalid tracking number.")
+    
+    return render(request, 'scan_order.html')
 '''
 @login_required(login_url='login')
 def addresss(request):
