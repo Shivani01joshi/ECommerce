@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Order Date</th>
+        <th scope="col">Order Id</th>
+        <th scope="col">Product details</th>
+        <th scope="col">Payment</th>
+        <th scope="col">Customer details</th>
+        <th scope="col">Customer Address</th>
+        <th scope="col">Pickup Status</th>
+        <th scope="col">Shipped date</th>
+        <th scope="col">EDD</th>
+        <th scope="col">Delivered Date</th>
+        <th scope="col">Dimensions</th>
+        <th scope="col">tracking_number</th>
+        <th scope="col">Invoice</th>
+        
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        <td>{{ order.order_date }}</td>
+        <td>{{ order.order_id }}</td>
+        <td>
+          {% for item in order.items.all %}
+            {{ item.product.name }} ({{ item.quantity }}x) <br>
+          {% endfor %}
+        </td>
+        <td>${{ order.get_total_order_price }}</td>
+        <td>{{ order.user.username }}</td>
+        <td>
+          {{ order.checkout_address.street_address }}, 
+          {{ order.checkout_address.apartment_address }}, 
+          {{ order.checkout_address.country }}, 
+          {{ order.checkout_address.zip_code }}
+        </td>
+        {% if order.shipment %}
+          <td>{{ order.shipment.shipment_status }}</td>
+          {% if order.shipment.shipment_status == "Pending" %}
+          <td>Not shipped</td>
+          <td>None</td>
+          {% else %}
+          <td>{{ order.shipment.shipped_at }}</td>
+          <td>{{ order.shipment.edd }}</td>
+          {% endif %}
+          {% if order.shipment.shipment_status == "delivered" %}
+          <td>{{ order.shipment.delivered_at }}</td>
+          {% else %}
+          <td>Not Delivered</td>
+          {% endif %}
+          <td>{{ order.shipment.dimensions }}</td>
+          <td>{{ order.shipment.tracking_number }}</td>
+          <td><a href="{% url 'generate-invoice' order.id %}">Download Invoice</a></td>
+
+        {% else %}
+          <td><a href="{% url 'shipment-create' order.id %}">Add Shipment Details</a></td>
+        {% endif %}
+        
+        
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -46,27 +46,6 @@ class OrderItem(models.Model):
     
     def final_price(self):
         return self.get_total_item_price()
-
-class Order(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    items=models.ManyToManyField(OrderItem)
-    start_date = models.DateTimeField(auto_now=True)
-    order_date=models.DateTimeField(auto_now_add=True)
-    ordered=models.BooleanField(default=False)
-    order_id=models.CharField(max_length=100,blank=True,null=True,unique=True,default=None)
-    datetime_ofpayment=models.DateTimeField(auto_now_add=True)
-    order_delivered=models.BooleanField(default=False)
-    order_received=models.BooleanField(default=False)
-    
-    def __str__(self):
-        return f"Order {self.order_id} by {self.user}"
-    
-    def get_total_order_price(self):
-        return sum(item.get_total_item_price() for item in self.items.all())
-    
-    def get_total_count(self):
-        order=Order.objects.get(id=self.pk)
-        return order.items.count()
     
 class checkoutAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -77,13 +56,35 @@ class checkoutAddress(models.Model):
 
     def __str__(self):
         return self.user.username
-
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    items=models.ManyToManyField(OrderItem)
+    start_date = models.DateTimeField(auto_now=True)
+    order_date=models.DateTimeField(auto_now_add=True)
+    ordered=models.BooleanField(default=False)
+    order_id=models.CharField(max_length=100,blank=True,null=True,unique=True,default=None)
+    datetime_ofpayment=models.DateTimeField(auto_now_add=True)
+    order_delivered=models.BooleanField(default=False)
+    order_received=models.BooleanField(default=False)
+    checkout_address = models.ForeignKey(checkoutAddress, on_delete=models.SET_NULL, null=True) 
+    def __str__(self):
+        return f"Order {self.order_id} by {self.user}"
+    
+    def get_total_order_price(self):
+        return sum(item.get_total_item_price() for item in self.items.all())
+    
+    def get_total_count(self):
+        order=Order.objects.get(id=self.pk)
+        return order.items.count()
 class Shipment(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE)
-    tracking_number = models.CharField(max_length=100, unique=True)  
+    tracking_number = models.CharField(max_length=100, unique=True,blank=True)  
     shipped_at = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
+    edd = models.DateTimeField(null=True, blank=True) 
     shipment_status = models.CharField(max_length=20, default='Pending')  # Pending, Shipped, Delivered
+    dimensions = models.CharField(max_length=100, blank=True, null=True)
+    
 
     def __str__(self):
         return f"Shipment {self.tracking_number} for Order {self.order.order_id}"
@@ -101,5 +102,14 @@ class Shipment(models.Model):
         self.order.order_delivered = True  # Order has been delivered
         self.order.save()
         self.save()
+    
+    def set_dimensions(self, length, breadth, weight):
+        # Store dimensions as a formatted string
+        self.dimensions = f"Length: {length} cm, Breadth: {breadth} cm, Weight: {weight} kg"
+        self.save()
+
+    def get_dimensions(self):
+        # Split dimensions back into individual components (optional)
+        return self.dimensions.split(", ")
 
 

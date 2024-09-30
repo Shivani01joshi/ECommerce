@@ -1,15 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Order Details</h2>
-<p>Order ID: {{ order.order_id }}</p>
+    <h2>Order Details</h2>
+    <p>Order ID: {{ order.order_id }}</p>
 
-{% if shipment %}
-    <h3>Shipment Details</h3>
-    <p>Tracking Number: {{ shipment.tracking_number }}</p>
-    <p>Shipped At: {{ shipment.shipped_at }}</p>
-    <p>Delivered At: {{ shipment.delivered_at }}</p>
-    <p>Shipment Status: {{ shipment.shipment_status }}</p>
-{% else %}
-    <p>No shipment information available.</p>
-{% endif %}
+    {% if shipment %}
+        <h3>Shipment Details</h3>
+        <p>Tracking Number: {{ shipment.tracking_number }}</p>
+        <p>Shipment Status: {{ shipment.shipment_status }}</p>
+        {% if shipment.shipment_status == "Pending" %}
+        <p>Your Order has not yet shipped</p>
+        {% else %}
+        {% if shipment.shipment_status != "delivered" %}
+            <p>Shipped At: {{ shipment.shipped_at }}</p>
+            <p>Expected delivery date: {{ shipment.edd }}</p>
+        {% else %}
+            <p>Delivered At: {{ shipment.delivered_at }}</p>
+            <td><a href="{% url 'generate-invoice' order.id %}">Download Invoice</a></td>
+        {% endif %}
+        {% endif %}
+        <br>
+        <br>
+       
+
+    {% else %}
+        <p>No shipment information available.</p>
+    {% endif %}
 {% endblock content %}

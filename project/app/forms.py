@@ -1,8 +1,9 @@
+import random
+import string
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-
-from .models import Category, Product, Rating, checkoutAddress
+from .models import Category, Product, Rating, Shipment, checkoutAddress
 
 class CustomUserCreationForm(UserCreationForm):
     
@@ -60,3 +61,25 @@ class CheckoutForm(forms.ModelForm):
 
 class SearchForm(forms.Form):
     query = forms.CharField(label='Search', max_length=100)
+
+class ShipmentForm(forms.ModelForm):
+    length = forms.DecimalField(max_digits=10, decimal_places=2, label="Length (cm)")
+    breadth = forms.DecimalField(max_digits=10, decimal_places=2, label="Breadth (cm)")
+    weight = forms.DecimalField(max_digits=10, decimal_places=2, label="Weight (kg)")
+    tracking_number = forms.CharField(max_length=100, label="Tracking Number")
+    shipment_status = forms.ChoiceField(choices=[('Pending', 'Pending'), ('Shipped', 'Shipped'), ('Delivered', 'Delivered')])
+    edd = forms.DateTimeField(label="Estimated Delivery Date")
+
+    class Meta:
+        model = Shipment
+        fields = ['tracking_number','shipment_status', 'edd']  # Add 'tracking_number' if you want it in the form
+
+    
+    def save(self, order=None, commit=True):
+        shipment = super().save(commit=False)
+        if order:
+            shipment.order = order  # Assigning the order to the shipment
+        shipment.dimensions = f"Length: {self.cleaned_data['length']} cm, Breadth: {self.cleaned_data['breadth']} cm, Weight: {self.cleaned_data['weight']} kg"
+        if commit:
+            shipment.save()
+        return shipment

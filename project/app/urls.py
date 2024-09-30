@@ -38,6 +38,10 @@ urlpatterns = [
     path('product/<int:id>/', views.product_detail, name='product_detail'),
    path('scan_order/',views.scan_order,name='scan_order'),
    path('shippment-status/<int:id>/',views.shippment_status,name='shippment-status'),
+   path('shippment_Admin/',views.shippment_Admin,name='shippment_Admin'),
+   path('shipment/<int:order_id>/', views.shipment_create_view, name='shipment-create'),
+    path('invoice/<int:order_id>/',  views.generate_invoice, name='generate-invoice'),
+
    
     
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

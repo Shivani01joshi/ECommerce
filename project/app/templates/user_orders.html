@@ -5,7 +5,7 @@
     {% if orders %}
         <div class="row">
             {% for order in orders %}
-                <div class="col-md-6 mb-4"> <!-- Changed col-md-4 to col-md-6 -->
+                <div class="col-md-6 mb-4"> 
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">User: {{ order.user }}</h5>
@@ -36,7 +36,14 @@
                                                 </div>
                                             </div>
                                         {% endfor %}
-                                        <a href="{% url "shippment-status" order.id %}">Check for Shippment status</a>
+            
+                                        {% if user.is_authenticated %}
+                                        {% if user.is_superuser %}
+                                        <a href="{% url "shippment_Admin"  %}">Check for Shippment status</a>
+                                        {% endif %}
+                                        <a href="{% url "shippment-status" order.id  %}">View shipmment Details</a>
+
+                                        {% endif %}
                                     </div>
                                 {% else %}
                                     <p>No items in this order.</p>

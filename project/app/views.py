@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from .models import Category, Order, OrderItem, Product, Shipment, checkoutAddress
-from .forms import CategoryForm, CheckoutForm, CustomUserCreationForm, ForgetPasswordForm,  ProductForm, RatingForm, ResetPasswordForm, SearchForm
+from .forms import CategoryForm, CheckoutForm, CustomUserCreationForm, ForgetPasswordForm,  ProductForm, RatingForm, ResetPasswordForm, SearchForm, ShipmentForm
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -21,6 +21,10 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from django.utils import timezone
 import stripe
 from .stripe_utils import create_payment_intent
 stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
@@ -383,25 +387,30 @@ def confirm_payment(request):
             if payment_intent.status == 'succeeded':
                 order_items = OrderItem.objects.filter(user=request.user, ordered=False)
                 
-                print(order_items)
+                #print(order_items)
                 if not order_items.exists():
                     return JsonResponse({'error': 'No items found in your cart'}, status=400)
                 try:
                     order = Order.objects.filter(user=request.user, ordered=False)
+                    checkout_address = checkoutAddress.objects.filter(user=request.user).last()
+                    #print(checkout_address,'checkout ')
+                    order.checkout_address = checkout_address
+                    #print(order.checkout_address,'order.checkout_address')
                     order.order_id = payment_intent.id
                     order.datetime_ofpayment = datetime.fromtimestamp(payment_intent.created)
                 except Order.DoesNotExist:
                     order = Order.objects.create(
                         user=request.user,
-                        ordered=False,
+                        ordered=True,
                         order_id=payment_intent.id,
                         datetime_ofpayment=datetime.fromtimestamp(payment_intent.created)
                     )
-                print(order)
+                #print(order)
                 order = Order.objects.create(
                         user=request.user,
-                        ordered=False,
+                        ordered=True,
                         order_id=payment_intent.id,
+                        checkout_address = checkout_address,
                         datetime_ofpayment=datetime.fromtimestamp(payment_intent.created)
                     )
                 for item in order_items:
@@ -420,6 +429,7 @@ def confirm_payment(request):
                 tracking_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
                 # Create or update shipment details
+                '''
                 shipment, _ = Shipment.objects.get_or_create(
                     order=order,
                     defaults={
@@ -432,6 +442,7 @@ def confirm_payment(request):
                 shipment.delivered_at = timezone.now() if shipment.shipment_status == 'Shipped' else shipment.delivered_at
                 shipment.save()
                 print(shipment)
+                '''
                 total_price = request.session.get('total_price')
                 subject = "Payment status"
                 html_message = render_to_string('order_confirmation_email.html', {
@@ -470,6 +481,7 @@ def user_orders(request):
 def shippment_status(request,id):
     order = get_object_or_404(Order, id=id)
     shipment = getattr(order, 'shipment', None)
+    #shipment = get_object_or_404(Shipment, id=id)
     context = {
         'order': order,
         'shipment': shipment,
@@ -519,7 +531,6 @@ def scan_order(request):
         try:
             shipment = get_object_or_404(Shipment, tracking_number=scanned_code)
             
-            # Update shipment status based on input from the scanner
             if shipment.shipment_status == 'Pending':
                 shipment.mark_as_shipped()
                 shipment.shipped_at = timezone.now()  # Update shipped_at when marked as shipped
@@ -542,6 +553,135 @@ def scan_order(request):
             return HttpResponse("Invalid tracking number.")
     
     return render(request, 'scan_order.html')
+def shippment_Admin(request):
+    orders = Order.objects.filter(ordered=True).select_related('checkout_address', 'user').prefetch_related('items', 'items__product', 'shipment')
+    for order in orders:
+        print(order.checkout_address)
+    context = {
+        'orders': orders
+    }
+    return render(request, 'shippment_Admin.html', context)
+def shipment_create_view(request, order_id):
+    # Fetch the order based on order_id
+    order = get_object_or_404(Order, id=order_id)
+    
+    # If the shipment already exists, prepopulate the form with existing data
+    shipment = Shipment.objects.filter(order=order).first()
+
+    if request.method == 'POST':
+        form = ShipmentForm(request.POST, instance=shipment)
+        if form.is_valid():
+            form.save(order=order)  # Pass the order to the form's save method
+            return redirect('shippment_Admin')# Redirect to order list after saving
+    else:
+        form = ShipmentForm(instance=shipment)
+    
+    context = {
+        'form': form,
+        'order': order,
+    }
+    return render(request, 'shipment_form.html', context)
+def generate_invoice(request, order_id):
+    # Fetch the order using the order_id
+    order = Order.objects.get(id=order_id)
+    user = order.user
+    address = order.checkout_address
+
+    # Create a response object and set content type to PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="invoice_{order_id}.pdf"'
+
+    # Create a PDF canvas
+    p = canvas.Canvas(response, pagesize=letter)
+    width, height = letter
+
+    # Set the title
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(200, height - 50, "Tax Invoice")
+
+    # Draw the invoice details
+    p.setFont("Helvetica", 12)
+    p.drawString(50, height - 100, f"Invoice Number: {order.order_id}")
+    p.drawString(50, height - 120, f"Order Number: {order.order_id}")
+    p.drawString(50, height - 140, "Nature of Transaction: Inter-State")
+    p.drawString(50, height - 160, "Place of Supply: KARNATAKA")
+    p.drawString(50, height - 180, "PacketID: 9421434111")
+    p.drawString(50, height - 200, f"Invoice Date: {timezone.now().date()}")
+    p.drawString(50, height - 220, f"Order Date: {order.order_date.date()}")
+    p.drawString(50, height - 240, "Nature of Supply: Goods")
+
+    # Bill to / Ship to details
+    p.drawString(50, height - 280, "Bill to / Ship to:")
+    p.drawString(50, height - 300, user.username)
+    p.drawString(50, height - 320, f"{address.street_address}, {address.apartment_address}, {address.country}, {address.zip_code}")
+
+    # Bill From details
+    p.drawString(50, height - 360, "Bill From:")
+    p.drawString(50, height - 380, "MAHOTSAV E SOLUTION - SJIT")
+    p.drawString(50, height - 400, "Khasra No. 14//6,7,13,14,15,17,18,23,24,2516//1,2,9,10,1112/1, 17//3,4,5,6,7,8,11/2,12,13,14,15,")
+    p.drawString(50, height - 420, "Village Binola, Tehsil Manesar, Gurgaon, Haryana-122413")
+    p.drawString(50, height - 440, "GSTIN Number: 06AAFHD3184F1ZJ")
+    p.drawString(50, height - 460, "Customer Type: Unregistered")
+
+    # Ship From details
+    p.drawString(50, height - 500, "Ship From:")
+    p.drawString(50, height - 520, "MAHOTSAV E SOLUTION - SJIT")
+    p.drawString(50, height - 540, "Khasra No. 14//6,7,13,14,15,17,18,23,24,2516//1,2,9,10,1112/1, 17//3,4,5,6,7,8,11/2,12,13,14,15,")
+    p.drawString(50, height - 560, "Village Binola, Tehsil Manesar, Gurgaon, Haryana-122413")
+
+    # Table header
+    p.drawString(50, height - 600, "Qty")
+    p.drawString(100, height - 600, "Gross Amount")
+    p.drawString(250, height - 600, "Discount")
+    p.drawString(350, height - 600, "Other Charges")
+    p.drawString(450, height - 600, "Tax")
+    p.drawString(540, height - 600, "Total Amount")
+
+    # Initialize totals and charges
+    y_position = height - 620
+    total_amount = 0
+    total_discount = 0
+    total_other_charges = 0
+    total_tax = 0
+
+    # Set example values for discount, other charges, and tax (you can fetch these from your models)
+    discount_rate = 0.10  # 10% discount
+    other_charges = 50.00  # Example other charges
+    tax_rate = 0.18  # 18% tax
+
+    for item in order.items.all():
+        quantity = item.quantity
+        gross_amount = item.product.price * quantity
+        discount = gross_amount * discount_rate
+        tax = gross_amount * tax_rate
+
+        # Calculate the total amount for this item after discount and adding other charges
+        item_total = gross_amount - discount + tax + other_charges
+        total_amount += item_total
+        total_discount += discount
+        total_tax += tax
+
+        p.drawString(50, y_position, str(quantity))
+        p.drawString(100, y_position, f"Rs {gross_amount:.2f}")
+        p.drawString(250, y_position, f"Rs {discount:.2f}")
+        p.drawString(350, y_position, f"Rs {other_charges:.2f}")
+        p.drawString(450, y_position, f"Rs {tax:.2f}")
+        p.drawString(540, y_position, f"Rs {item_total:.2f}")
+
+        y_position -= 20
+
+    # Final total calculations
+    p.drawString(50, y_position, "TOTAL")
+    p.drawString(100, y_position, f"Rs {total_amount:.2f}")
+    #p.drawString(250, y_position + 20, f"Total Discount: Rs {total_discount:.2f}")
+    #p.drawString(350, y_position + 20, f"Total Tax: Rs {total_tax:.2f}")
+
+    # Finalize the PDF
+    p.showPage()
+    p.save()
+
+    return response
+
 '''
 @login_required(login_url='login')
 def addresss(request):
